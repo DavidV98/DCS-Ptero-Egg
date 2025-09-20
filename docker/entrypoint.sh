@@ -1,4 +1,8 @@
 #!/bin/bash
+cd /home/container
+
+# This script is the entrypoint for the DCS server Docker container.
+# It handles installation, updates, configuration generation, and launching the server.
 
 # Ensure script uses Unix-style line endings to prevent 'command not found' errors.[9]
 # Pterodactyl's installer can handle this, but it's good practice for local testing.
