@@ -104,4 +104,4 @@ USER container
 RUN chmod +x /home/container/entrypoint.sh
 
 # Set the entrypoint for the container. The script will be the main process (PID 1).
-ENTRYPOINT [ "/home/container/entrypoint.sh" ]
+CMD [ "/bin/bash", "/home/container/entrypoint.sh" ]
