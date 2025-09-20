@@ -7,7 +7,7 @@
 # Define key variables for the DCS installation and configuration.
 # The Pterodactyl panel will pass these values as environment variables.
 INSTALL_DIR="/home/container/DCS_World"
-WINE_PREFIX_DIR="/home/container/wine"
+WINE_PREFIX_DIR="/home/container/.wine"
 INSTALLER_PATH="/home/container/DCS_World_Server_modular.exe"
 UPDATER_EXE="${INSTALL_DIR}/bin/DCS_Updater.exe"
 SERVER_EXE="${INSTALL_DIR}/bin/DCS_server.exe"

@@ -9,16 +9,41 @@ LABEL description="DCS World Dedicated Server Builder for Pterodactyl Panel"
 # Configure multi-arch support and install core dependencies.
 # This includes Wine, Winetricks, and wget for downloading files.
 # xdotool is included for the potential need to automate GUI interactions if necessary.
-RUN dpkg --add-architecture i386 && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-    wget \
-    wine \
-    winetricks \
-    xvfb \
-    xdotool \
-    # Clean up the package cache to reduce the final image size.
-    && rm -rf /var/lib/apt/lists/*
+# Install required packages
+RUN             dpkg --add-architecture i386 \
+                && apt update -y \
+                && apt install -y --no-install-recommends \
+                    curl \
+                    wget \
+                    gnupg2 \
+                    tzdata \
+                    software-properties-common \
+                    libntlm0 \
+                    winbind \
+                    xvfb \
+                    xauth \
+                    python3 \
+                    libncurses5:i386 \
+                    libncurses6:i386 \
+                    libsdl2-2.0-0 \
+                    libsdl2-2.0-0:i386
+
+# Install rcon
+RUN             cd /tmp/ \
+                && curl -sSL https://github.com/gorcon/rcon-cli/releases/download/v0.10.3/rcon-0.10.3-amd64_linux.tar.gz > rcon.tar.gz \
+                && tar xvf rcon.tar.gz \
+                && mv rcon-0.10.3-amd64_linux/rcon /usr/local/bin/
+
+# Install wine and with recommends
+RUN             mkdir -pm755 /etc/apt/keyrings
+RUN             wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
+RUN             wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources
+RUN             apt update
+RUN             apt install --install-recommends winehq-stable cabextract wine-binfmt -y
+
+# Set up Winetricks
+RUN	            wget -q -O /usr/sbin/winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks \
+                && chmod +x /usr/sbin/winetricks
 
 # Set the WINE architecture and disable the graphical user interface (GUI) for a headless setup.
 ENV WINEARCH="win64"
@@ -56,12 +81,15 @@ RUN dpkg --add-architecture i386 && \
     # Clean up the package cache again.
     && rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user to run the server process.
+RUN useradd -d /home/container -m container
+    
 # Set the working directory for the container process.
 WORKDIR /home/container
 
 # Copy the DCS installer and the entrypoint script from the builder stage.
 COPY --from=builder --chown=container:container /home/container/DCS_World_Server_modular.exe /home/container/DCS_World_Server_modular.exe
-COPY --from=builder --chown=container:container /home/container/entrypoint.sh /home/container/entrypoint.sh
+COPY --chown=container:container entrypoint.sh /home/container/entrypoint.sh
 
 # Expose the default ports for the DCS server.
 # DCS uses two contiguous ports starting from the specified port, for example, 10308 and 10309.[6]
