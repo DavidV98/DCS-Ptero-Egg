@@ -3,7 +3,9 @@ name: Docker Image CI
 on:
   push:
     tags:
-      - 'v*' # Trigger on pushes to tags that start with 'v'
+      - 'v*.*.*' # Trigger on pushes to tags that start with 'v'
+    branches:
+        - main     # Trigger on pushes to the main branch
 
 env:
   REGISTRY: ghcr.io
