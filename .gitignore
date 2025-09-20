@@ -1,0 +1,16 @@
+# Git ignore file for a Pterodactyl Egg project
+
+# Ignore build artifacts and temporary files
+build/
+dist/
+*.log
+
+# Ignore local configuration and sensitive files
+.env
+.DS_Store
+
+# Pterodactyl-specific files to ignore
+# The egg.json file is meant to be committed, but this
+# prevents accidental commits of other local panel files.
+pterodactyl/
+!pterodactyl/egg-dcs.json
