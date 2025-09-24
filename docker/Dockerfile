@@ -21,6 +21,7 @@ RUN             dpkg --add-architecture i386 \
                     libntlm0 \
                     winbind \
                     xvfb \
+                    x11-utils \
                     xauth \
                     python3 \
                     libncurses5:i386 \
@@ -39,14 +40,14 @@ RUN             mkdir -pm755 /etc/apt/keyrings
 RUN             wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
 RUN             wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources
 RUN             apt update
-RUN             apt install --install-recommends winehq-stable cabextract wine-binfmt -y
+RUN             apt install --install-recommends winehq-stable cabextract wine-binfmt wine32 -y
 
 # Set up Winetricks
 RUN	            wget -q -O /usr/sbin/winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks \
                 && chmod +x /usr/sbin/winetricks
 
 # Set the WINE architecture and disable the graphical user interface (GUI) for a headless setup.
-ENV WINEARCH="win64"
+ENV WINEARCH="win32"
 ENV WINEDLLOVERRIDES="winemenubuilder.exe=d"
 ENV DISPLAY=:0.0
 
@@ -77,12 +78,21 @@ RUN dpkg --add-architecture i386 && \
     apt-get install -y --no-install-recommends \
     wget \
     wine \
+    wine32 \
     xdotool \
+    xvfb \
+    x11-utils \
+    xauth \
     # Clean up the package cache again.
     && rm -rf /var/lib/apt/lists/*
 
+
+    
 # Create a non-root user to run the server process.
-RUN useradd -d /home/container -m container
+RUN useradd -m container
+
+# Make Pterodactyl data folder
+RUN mkdir -p /home/container
     
 # Set the working directory for the container process.
 WORKDIR /home/container

@@ -46,7 +46,7 @@ update_dcs_server() {
     echo "Checking for updates to DCS World..."
     
     # The Pterodactyl variable `DCS_BRANCH` controls this.
-    if]; then
+    if [${DCS_BRANCH} -s]; then
         echo "Updating to branch: ${DCS_BRANCH}"
         xvfb-run -a wine "${UPDATER_EXE}" update "@${DCS_BRANCH}"
     else
@@ -59,7 +59,7 @@ update_dcs_server() {
     xvfb-run -a wine "${UPDATER_EXE}" repair
     
     # Install modules specified by the `DCS_MODULES` Pterodactyl variable.
-    if]; then
+    if [${DCS_MODULES} -s]; then
         echo "Installing specified modules: ${DCS_MODULES}"
         
         for module in ${DCS_MODULES}; do
@@ -119,7 +119,7 @@ export PUID=${SERVER_PUID}
 export PGID=${SERVER_PGID}
 
 # Check if the DCS server is already installed.
-if; then
+if [ -d "${INSTALL_DIR}" ] && [ -n "$(ls -A ${INSTALL_DIR})" ]; then
     install_dcs_server
 else
     echo "DCS server already installed. Skipping installation."
