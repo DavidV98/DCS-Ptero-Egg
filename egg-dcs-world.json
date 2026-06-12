@@ -8,13 +8,13 @@
     "name": "DCS World Dedicated Server",
     "author": "DavidV98",
     "uuid": "5f3d8a2b-c9e1-4f67-8b3d-2a1c9e7f8b3d",
-    "description": "DCS World Dedicated Server running on Linux via Wine (WineHQ Staging, win64). Handles full automated installation from Eagle Dynamics on first run, optional terrain module installation, and auto-updates on start. Config is generated from panel variables and preserved across restarts.",
-    "features": null,
+    "description": "DCS World Dedicated Server running on Linux via Wine (WineHQ Staging, win64). Handles full automated installation from Eagle Dynamics on first run, optional terrain module installation, and auto-updates on start.",
+    "features": [],
     "docker_images": {
-        "DCS World Server (Wine \/ Ubuntu 22.04)": "ghcr.io\/davidv98\/dcs-ptero-egg:latest"
+        "DCS World Server (Wine / Ubuntu 22.04)": "ghcr.io/davidv98/dcs-ptero-egg:latest"
     },
     "file_denylist": [],
-    "startup": "\/entrypoint.sh",
+    "startup": "/entrypoint.sh",
     "config": {
         "files": "{}",
         "startup": "{\"done\": \"Server: listening\"}",
@@ -23,8 +23,8 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\n# Pull and run the install script from the GitHub repository.\n# The install script handles Wine setup, DCS download, and initial configuration.\ncurl -fsSL https:\/\/raw.githubusercontent.com\/DavidV98\/DCS-Ptero-Egg\/main\/docker\/install.sh | bash",
-            "container": "ghcr.io\/pterodactyl\/installers:ubuntu",
+            "script": "#!/bin/bash\ncurl -fsSL https://raw.githubusercontent.com/DavidV98/DCS-Ptero-Egg/main/docker/install.sh | bash",
+            "container": "ghcr.io/pterodactyl/installers:ubuntu",
             "entrypoint": "bash"
         }
     },
@@ -46,7 +46,7 @@
             "default_value": "10308",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|numeric|between:1024,65535",
+            "rules": "required|integer|between:1024,65535",
             "field_type": "text"
         },
         {
@@ -56,7 +56,7 @@
             "default_value": "8088",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|numeric|between:1024,65535",
+            "rules": "required|integer|between:1024,65535",
             "field_type": "text"
         },
         {
@@ -76,7 +76,7 @@
             "default_value": "16",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|numeric|between:1,256",
+            "rules": "required|integer|between:1,256",
             "field_type": "text"
         },
         {
@@ -91,7 +91,7 @@
         },
         {
             "name": "Terrain Modules",
-            "description": "Space-separated list of terrain module names to install. Caucasus is included by default. Example: MARIANAISLANDS_terrain SYRIA_terrain NEVADA_terrain. Paid maps require an Eagle Dynamics account (login not yet automated).",
+            "description": "Space-separated list of terrain module names to install. Caucasus is included by default. Example: MARIANAISLANDS_terrain SYRIA_terrain NEVADA_terrain. Paid maps require an Eagle Dynamics account.",
             "env_variable": "DCS_MODULES",
             "default_value": "",
             "user_viewable": true,
@@ -101,7 +101,7 @@
         },
         {
             "name": "Update Branch",
-            "description": "DCS release branch to track. Leave blank for the default stable release. Known options: dcs_server.release, dcs_server.openbeta.",
+            "description": "DCS release branch to track. Leave blank for the default stable release. Options: dcs_server.release, dcs_server.openbeta.",
             "env_variable": "DCS_BRANCH",
             "default_value": "",
             "user_viewable": true,
@@ -111,7 +111,7 @@
         },
         {
             "name": "Auto Update on Start",
-            "description": "Set to 1 to run DCS_updater.exe before each server start. Keeps DCS current automatically but adds 5-20 minutes to startup time depending on update size.",
+            "description": "Set to 1 to run DCS_updater.exe before each server start. Keeps DCS current but adds 5-20 minutes to startup time.",
             "env_variable": "AUTO_UPDATE",
             "default_value": "0",
             "user_viewable": true,
@@ -121,12 +121,12 @@
         },
         {
             "name": "Installer Download URL",
-            "description": "Direct download URL for the DCS Dedicated Server installer .exe. Eagle Dynamics occasionally changes this. Update it here without re-importing the egg.",
+            "description": "Direct download URL for the DCS Dedicated Server installer .exe. Update this here if Eagle Dynamics changes the URL without re-importing the egg.",
             "env_variable": "DCS_INSTALLER_URL",
-            "default_value": "https:\/\/www.digitalcombatsimulator.com\/gameloader\/dcs_server_installer_latest\/DCS_server_installer_latest.exe",
+            "default_value": "https://www.digitalcombatsimulator.com/gameloader/dcs_server_installer_latest/DCS_server_installer_latest.exe",
             "user_viewable": true,
             "user_editable": true,
-            "rules": "required|url|max:512",
+            "rules": "required|string|max:512",
             "field_type": "text"
         }
     ]
