@@ -57,6 +57,11 @@ RUN dpkg --add-architecture i386 && \
 # Do NOT copy game files here — the volume mount will hide them at runtime.
 RUN useradd -m -d /home/container -s /bin/bash container
 
+# Create the X11 socket directory with sticky-bit permissions.
+# Xvfb can't create it at runtime because the container user isn't root.
+# 1777 = world-writable + sticky bit, same as /tmp itself.
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+
 USER container
 ENV USER=container HOME=/home/container
 WORKDIR /home/container

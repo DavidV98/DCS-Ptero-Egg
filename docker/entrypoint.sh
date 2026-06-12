@@ -87,18 +87,18 @@ trap cleanup SIGTERM SIGINT SIGHUP
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo " [1/5] Starting virtual display (Xvfb)..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-# We start one persistent Xvfb for the entire lifecycle.
-# All subsequent wine commands use this display via DISPLAY=:0.
-# +extension GLX is needed for some Wine 3D initialisation paths.
 Xvfb :0 -screen 0 1024x768x16 -ac +extension GLX +render -noreset &
 XVFB_PID=$!
 sleep 2
 
-if ! kill -0 "$XVFB_PID" 2>/dev/null; then
-    echo "   ERROR: Xvfb failed to start. Cannot run Wine without a display."
+# Verify the socket actually exists — if /tmp/.X11-unix wasn't pre-created
+# in the Dockerfile, Xvfb silently fails to bind and Wine has no display.
+if [ ! -S "/tmp/.X11-unix/X0" ]; then
+    echo "   ERROR: Xvfb socket /tmp/.X11-unix/X0 not found."
+    echo "   The Dockerfile is missing: RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix"
     exit 1
 fi
-echo "   ✓ Xvfb running (PID: ${XVFB_PID})"
+echo "   ✓ Xvfb running and socket confirmed (PID: ${XVFB_PID})"
 
 # ════════════════════════════════════════════════════════════
 # STEP 2 — Wine prefix
@@ -110,16 +110,15 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 if [ ! -f "${WINEPREFIX}/system.reg" ]; then
     echo "   First run — initialising Wine prefix (win64)..."
-    # wineboot --init creates the C: drive, registry hives, and Windows
-    # user profile under C:\users\container\ (matching our Linux username).
     wineboot --init
     sleep 5
 
-    # Visual C++ 2015–2019 redistributable is required by DCS_server.exe.
-    # winetricks downloads and installs it silently.
     echo "   Installing vcrun2019 (required by DCS)..."
-    winetricks -q vcrun2019
-    echo "   ✓ Wine prefix initialised."
+    # Non-fatal: winetricks can fail on first run in some environments.
+    # DCS may still launch. If it crashes with a missing DLL error,
+    # trigger a reinstall to retry this step with a confirmed working display.
+    winetricks -q vcrun2019 || echo "   WARNING: winetricks failed — continuing anyway."
+    echo "   ✓ Wine prefix ready."
 else
     echo "   ✓ Existing Wine prefix found."
 fi
