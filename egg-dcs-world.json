@@ -1,0 +1,133 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2025-06-11T00:00:00+00:00",
+    "name": "DCS World Dedicated Server",
+    "author": "DavidV98",
+    "uuid": "5f3d8a2b-c9e1-4f67-8b3d-2a1c9e7f8b3d",
+    "description": "DCS World Dedicated Server running on Linux via Wine (WineHQ Staging, win64). Handles full automated installation from Eagle Dynamics on first run, optional terrain module installation, and auto-updates on start. Config is generated from panel variables and preserved across restarts.",
+    "features": null,
+    "docker_images": {
+        "DCS World Server (Wine \/ Ubuntu 22.04)": "ghcr.io\/davidv98\/dcs-ptero-egg:latest"
+    },
+    "file_denylist": [],
+    "startup": "\/entrypoint.sh",
+    "config": {
+        "files": "{}",
+        "startup": "{\"done\": \"Server: listening\"}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\n# Pull and run the install script from the GitHub repository.\n# The install script handles Wine setup, DCS download, and initial configuration.\ncurl -fsSL https:\/\/raw.githubusercontent.com\/DavidV98\/DCS-Ptero-Egg\/main\/docker\/install.sh | bash",
+            "container": "ghcr.io\/pterodactyl\/installers:ubuntu",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Server Name",
+            "description": "The name shown in the DCS multiplayer server browser.",
+            "env_variable": "DCS_SERVER_NAME",
+            "default_value": "DCS Pterodactyl Server",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:255",
+            "field_type": "text"
+        },
+        {
+            "name": "Game Port",
+            "description": "UDP port for DCS multiplayer. DCS also uses port+1 (e.g. 10308 and 10309). Allocate both in the Pterodactyl panel under Ports.",
+            "env_variable": "DCS_SERVER_PORT",
+            "default_value": "10308",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric|between:1024,65535",
+            "field_type": "text"
+        },
+        {
+            "name": "WebGUI Port",
+            "description": "TCP port for the DCS server WebGUI remote control panel. Allocate this in the Pterodactyl panel under Ports.",
+            "env_variable": "DCS_WEBGUI_PORT",
+            "default_value": "8088",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric|between:1024,65535",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Password",
+            "description": "Password required to join the server. Leave blank for a public server.",
+            "env_variable": "DCS_SERVER_PASSWORD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:128",
+            "field_type": "text"
+        },
+        {
+            "name": "Max Players",
+            "description": "Maximum number of concurrent players allowed on the server.",
+            "env_variable": "DCS_MAX_PLAYERS",
+            "default_value": "16",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric|between:1,256",
+            "field_type": "text"
+        },
+        {
+            "name": "Write Directory",
+            "description": "The Saved Games profile name DCS uses for config, missions, and logs. Only change this if running multiple DCS servers on the same Wings node.",
+            "env_variable": "DCS_WRITE_DIR",
+            "default_value": "DCS.server",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Terrain Modules",
+            "description": "Space-separated list of terrain module names to install. Caucasus is included by default. Example: MARIANAISLANDS_terrain SYRIA_terrain NEVADA_terrain. Paid maps require an Eagle Dynamics account (login not yet automated).",
+            "env_variable": "DCS_MODULES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:512",
+            "field_type": "text"
+        },
+        {
+            "name": "Update Branch",
+            "description": "DCS release branch to track. Leave blank for the default stable release. Known options: dcs_server.release, dcs_server.openbeta.",
+            "env_variable": "DCS_BRANCH",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update on Start",
+            "description": "Set to 1 to run DCS_updater.exe before each server start. Keeps DCS current automatically but adds 5-20 minutes to startup time depending on update size.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Installer Download URL",
+            "description": "Direct download URL for the DCS Dedicated Server installer .exe. Eagle Dynamics occasionally changes this. Update it here without re-importing the egg.",
+            "env_variable": "DCS_INSTALLER_URL",
+            "default_value": "https:\/\/www.digitalcombatsimulator.com\/gameloader\/dcs_server_installer_latest\/DCS_server_installer_latest.exe",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|url|max:512",
+            "field_type": "text"
+        }
+    ]
+}
