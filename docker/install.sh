@@ -110,6 +110,22 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo " [3/6] Initialising Wine prefix (win64)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 mkdir -p "${INSTALL_DIR}"
+
+# CRITICAL: Wine refuses to use a prefix not owned by the current user, with
+#   "wine: '/mnt/server/.wine' is not owned by you"
+# The install container runs as root, but a pre-existing prefix (from an earlier
+# partial install, or the server volume's existing ownership) may be owned by
+# UID 1000. We run the install as root, so claim everything under INSTALL_DIR
+# for root now; the script already chowns it back to UID 1000 at the very end.
+# HOME must also point at INSTALL_DIR so Wine resolves the prefix correctly and
+# doesn't try to use root's home.
+export HOME="${INSTALL_DIR}"
+CURRENT_UID="$(id -u)"
+echo "   Running as UID ${CURRENT_UID}; claiming prefix ownership..."
+chown -R "${CURRENT_UID}:${CURRENT_UID}" "${INSTALL_DIR}" 2>/dev/null || true
+
+# If a prefix exists but is half-built/locked, Wine can still balk. A pre-existing
+# valid prefix is fine to reuse; we only need ownership correct (handled above).
 wineboot --init
 sleep 5
 echo "   Installing vcrun2019 (required by DCS)..."
