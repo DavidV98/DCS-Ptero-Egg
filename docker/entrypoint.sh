@@ -133,6 +133,9 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo " [2/6] Wine prefix"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# HOME must point at /home/container so Wine resolves the prefix correctly.
+# (Already the container user's home, but set explicitly to be safe.)
+export HOME="/home/container"
 if [ ! -f "${WINEPREFIX}/system.reg" ]; then
     echo "   First run — initialising Wine prefix..."
     wineboot --init
