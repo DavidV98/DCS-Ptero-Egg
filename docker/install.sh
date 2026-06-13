@@ -39,16 +39,16 @@ DCS_INSTALLER_TMP="/tmp/dcs_installer.exe"
 SENTINEL="${INSTALL_DIR}/.dcs_installed"
 
 # ── Egg variables ─────────────────────────────────────────────
-: "${DCS_INSTALLER_URL:=https://www.digitalcombatsimulator.com/gameloader/dcs_server_installer_latest/DCS_server_installer_latest.exe}"
+: "${DCS_INSTALLER_URL:=https://www.digitalcombatsimulator.com/upload/iblock/e0e/anj9iu7zs26ikw81hj18obkxmyhqx2be/DCS_World_Server_modular.exe}"
 : "${DCS_WRITE_DIR:=DCS.server}"
 : "${DCS_SERVER_NAME:=DCS Pterodactyl Server}"
 : "${DCS_SERVER_PORT:=10308}"
 : "${DCS_SERVER_PASSWORD:=}"
-: "${DCS_MAX_PLAYERS:=16}"
+: "${DCS_MAX_PLAYERS:=8}"
 : "${DCS_MODULES:=}"
 : "${DCS_MISSION:=default.miz}"
 : "${DCS_WEBGUI_PORT:=8088}"
-: "${DCS_DEBUG_VNC:=0}"
+: "${DCS_DEBUG_VNC:=1}"
 : "${DCS_VNC_PORT:=6080}"
 
 # ── Wine environment ──────────────────────────────────────────
@@ -269,10 +269,17 @@ else
     sleep 2
     xdotool windowfocus --sync "${WID}"
     sleep 0.5
-    wclick "${WID}" 75 300       # "I accept the agreement" radio button
+    # Use the keyboard access key rather than a coordinate click. In the Inno
+    # Setup licence dialog, "I accept the agreement" has an underlined 'a'
+    # (Alt+A selects it); a fixed-coordinate click proved unreliable and left
+    # the radio on "I do not accept", greying out Next. Alt+A is robust.
+    xdotool key --clearmodifiers alt+a
     sleep 0.5
-    wclick "${WID}" 365 352      # Next button
-    echo "   ✓ Licence accepted"
+    # As a belt-and-braces fallback, also try the access key with the window
+    # focused, then advance with Alt+N (Next).
+    xdotool key --clearmodifiers alt+n
+    sleep 0.5
+    echo "   ✓ Licence accepted (Alt+A) and advanced (Alt+N)"
 
     # ── Dialog 3: Select Destination Location ─────────────
     # Default path: C:\Program Files\Eagle Dynamics\DCS World Server
@@ -281,7 +288,7 @@ else
     sleep 3
     xdotool windowfocus --sync "${WID}"
     sleep 0.5
-    wclick "${WID}" 365 330      # Next button
+    xdotool key --clearmodifiers alt+n   # Next
     echo "   ✓ Path: C:\\Program Files\\Eagle Dynamics\\DCS World Server"
 
     # ── Dialog 4: Select License Type (terrain modules) ───
@@ -292,17 +299,14 @@ else
     sleep 3
     xdotool windowfocus --sync "${WID}"
     sleep 0.5
-    # Click the dropdown to focus it
-    wclick "${WID}" 320 132
+    # VERIFIED in testing: the combo box already has focus and defaults to
+    # "Full installation" (top entry). A single Down arrow moves the selection
+    # to "Compact installation" — no need to open the dropdown or Tab to it.
+    # NOTE: if a future installer reorders these, the VNC will show the wrong
+    # pick; select by hand if so (terrain is added later via DCS_MODULES).
+    xdotool key --clearmodifiers Down    # Full -> Compact
     sleep 0.5
-    # Open dropdown with Alt+Down, navigate to second option, confirm
-    xdotool key alt+Down
-    sleep 0.5
-    xdotool key Down             # "Compact installation" is the second option
-    sleep 0.3
-    xdotool key Return
-    sleep 0.5
-    wclick "${WID}" 365 352      # Next button
+    xdotool key --clearmodifiers alt+n   # Next
     echo "   ✓ Compact installation selected"
 
     # ── Dialog 5: Select Start Menu Folder ────────────────
@@ -310,7 +314,7 @@ else
     sleep 3
     xdotool windowfocus --sync "${WID}"
     sleep 0.5
-    wclick "${WID}" 365 330      # Next button
+    xdotool key --clearmodifiers alt+n   # Next
     echo "   ✓ Start menu OK"
 
     # ── Dialog 6: Select Additional Tasks ─────────────────
@@ -319,15 +323,18 @@ else
     sleep 3
     xdotool windowfocus --sync "${WID}"
     sleep 0.5
-    wclick "${WID}" 365 330      # Next button
+    xdotool key --clearmodifiers alt+n   # Next
     echo "   ✓ Additional tasks OK"
 
     # ── Dialog 7: Ready to Install ────────────────────────
+    # The action button here reads "Install" with an underlined 'I' (Alt+I).
     echo "   [GUI 7/8] Starting installation..."
     sleep 3
     xdotool windowfocus --sync "${WID}"
     sleep 0.5
-    wclick "${WID}" 365 330      # Install button
+    xdotool key --clearmodifiers alt+i   # Install
+    sleep 0.3
+    xdotool key --clearmodifiers Return  # fallback if Install is default button
     echo "   ✓ Installation in progress..."
 
     # ── Dialog 8: Completing the DCS World Server Setup Wizard ──
