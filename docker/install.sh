@@ -48,6 +48,8 @@ SENTINEL="${INSTALL_DIR}/.dcs_installed"
 : "${DCS_MODULES:=}"
 : "${DCS_MISSION:=default.miz}"
 : "${DCS_WEBGUI_PORT:=8088}"
+: "${DCS_DEBUG_VNC:=0}"
+: "${DCS_VNC_PORT:=6080}"
 
 # ── Wine environment ──────────────────────────────────────────
 export HOME="${INSTALL_DIR}"
@@ -76,6 +78,16 @@ apt-get install -y -q --no-install-recommends \
     software-properties-common \
     xvfb xdotool openbox \
     winbind cabextract procps unzip
+
+# If the debug VNC is requested, also install the noVNC stack so the operator
+# can watch and manually drive the installer dialogs in a browser as a backup
+# to the xdotool automation.
+if [ "${DCS_DEBUG_VNC}" = "1" ]; then
+    echo "   DCS_DEBUG_VNC=1 — installing noVNC stack for install-time console..."
+    apt-get install -y -q --no-install-recommends \
+        x11vnc novnc websockify || \
+        echo "   ⚠ noVNC packages failed to install (automation will still run)"
+fi
 
 CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-${VERSION_CODENAME:-jammy}}")
 echo "   Ubuntu codename: ${CODENAME}"
@@ -108,6 +120,29 @@ openbox &
 OPENBOX_PID=$!
 sleep 1
 echo "   ✓ Xvfb started (PID: ${XVFB_PID}), openbox started (PID: ${OPENBOX_PID})"
+
+# ── Optional install-time debug VNC (LOCAL USE ONLY) ─────────────────────────
+# When DCS_DEBUG_VNC=1, expose the install display in a browser so the operator
+# can manually click through the DCS installer dialogs if the xdotool
+# automation misses. Reachable at http://<wings-host-ip>:${DCS_VNC_PORT}/vnc.html
+# SECURITY: no password — trusted local network only, never expose publicly.
+VNC_PID="" ; NOVNC_PID=""
+if [ "${DCS_DEBUG_VNC}" = "1" ]; then
+    echo "   [debug] Starting install-time noVNC on port ${DCS_VNC_PORT}"
+    echo "   [debug] Open http://<your-wings-host-ip>:${DCS_VNC_PORT}/vnc.html"
+    echo "   [debug] WARNING: no password — LOCAL/TRUSTED NETWORK ONLY"
+    x11vnc -display :0 -nopw -forever -shared -quiet -bg >/dev/null 2>&1 || \
+        echo "   [debug] x11vnc not available"
+    if command -v novnc_proxy >/dev/null 2>&1; then
+        novnc_proxy --vnc localhost:5900 --listen "${DCS_VNC_PORT}" >/dev/null 2>&1 &
+        NOVNC_PID=$!
+    elif [ -d /usr/share/novnc ]; then
+        websockify --web /usr/share/novnc "${DCS_VNC_PORT}" localhost:5900 >/dev/null 2>&1 &
+        NOVNC_PID=$!
+    else
+        echo "   [debug] noVNC web root not found — VNC console unavailable"
+    fi
+fi
 
 # ════════════════════════════════════════════════════════════
 # STEP 3 — Wine prefix
@@ -319,19 +354,33 @@ else
     # ── Wait for DCS_updater.exe to be created by the installer ──────────
     # The Inno Setup wizard installs DCS_updater.exe, then (with "Start
     # Download" checked) launches it to download the actual game files.
+    #
+    # If the xdotool automation drove the dialogs, this appears within ~2 min.
+    # But with DCS_DEBUG_VNC=1 the operator may be clicking through the dialogs
+    # by hand via the browser console, which takes longer — so we give a much
+    # more generous window in that case (15 min) before giving up.
     echo ""
-    echo "   Waiting for DCS_updater.exe to appear..."
-    UPDATER_TIMEOUT=120
+    if [ "${DCS_DEBUG_VNC}" = "1" ]; then
+        echo "   Waiting for DCS_updater.exe (up to 15 min — finish the dialogs"
+        echo "   in the VNC console at port ${DCS_VNC_PORT} if automation missed)..."
+        UPDATER_TIMEOUT=900
+    else
+        echo "   Waiting for DCS_updater.exe to appear..."
+        UPDATER_TIMEOUT=120
+    fi
     UPDATER_ELAPSED=0
     while [ ! -f "${DCS_UPDATER}" ] && [ "${UPDATER_ELAPSED}" -lt "${UPDATER_TIMEOUT}" ]; do
         sleep 5
         UPDATER_ELAPSED=$((UPDATER_ELAPSED + 5))
+        [ $((UPDATER_ELAPSED % 60)) -eq 0 ] && \
+            echo "   ... still waiting for the installer to finish (${UPDATER_ELAPSED}s)"
     done
 
     if [ ! -f "${DCS_UPDATER}" ]; then
         echo ""
         echo "   ERROR: DCS_updater.exe not found after installer completed."
-        echo "   The Inno Setup wizard did not install the updater."
+        echo "   The Inno Setup wizard did not finish. If automation missed a"
+        echo "   dialog, set DCS_DEBUG_VNC=1 and click through it in the browser."
         echo "   Check: ${DCS_UPDATER}"
         kill "${XVFB_PID}" 2>/dev/null
         exit 1
