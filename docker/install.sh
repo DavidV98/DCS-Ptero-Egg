@@ -74,7 +74,7 @@ apt-get update -y -q
 apt-get install -y -q --no-install-recommends \
     ca-certificates wget curl gnupg2 \
     software-properties-common \
-    xvfb xdotool \
+    xvfb xdotool openbox \
     winbind cabextract procps unzip
 
 CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-${VERSION_CODENAME:-jammy}}")
@@ -100,7 +100,14 @@ mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 Xvfb :0 -screen 0 1024x768x16 -ac &
 XVFB_PID=$!
 sleep 2
-echo "   ✓ Xvfb started (PID: ${XVFB_PID})"
+# Start a minimal window manager. Without it, the Inno Setup installer window
+# opens but isn't focusable/clickable, so the xdotool automation can't drive
+# it (this is why a headless install differs from the VNC session where
+# openbox was running). openbox makes the window manageable.
+openbox &
+OPENBOX_PID=$!
+sleep 1
+echo "   ✓ Xvfb started (PID: ${XVFB_PID}), openbox started (PID: ${OPENBOX_PID})"
 
 # ════════════════════════════════════════════════════════════
 # STEP 3 — Wine prefix
@@ -129,7 +136,12 @@ chown -R "${CURRENT_UID}:${CURRENT_UID}" "${INSTALL_DIR}" 2>/dev/null || true
 wineboot --init
 sleep 5
 echo "   Installing vcrun2019 (required by DCS)..."
-winetricks -q vcrun2019
+# NON-FATAL: winetricks frequently returns a non-zero exit code under Wine
+# (especially as root, with the harmless "%AppData% returned empty string"
+# warning), which would otherwise trip `set -e` and kill the whole install
+# before the DCS download even starts. We also install the real VC++ runtime
+# from the DCS-bundled vc_redist later, so a winetricks hiccup is not fatal.
+winetricks -q vcrun2019 || echo "   ⚠ winetricks vcrun2019 returned non-zero (continuing — vc_redist installs the runtime later)"
 echo "   ✓ Wine prefix ready"
 
 # Pre-create saved games directory for the runtime container user
@@ -164,6 +176,13 @@ else
     echo ""
     echo "   Launching installer with GUI automation..."
     echo "   (The installer runs in a virtual display — no visible window)"
+
+    # GUI automation is inherently best-effort: a single xdotool click that
+    # returns non-zero (window not focusable yet, timing, etc.) must NOT abort
+    # the whole install via `set -e`. The real success check is the polling
+    # loop below that waits for DCS_updater.exe / DCS_server.exe to appear.
+    # So we relax errexit for this block and restore it afterward.
+    set +e
 
     # ── Helper: wait for a named window to appear ─────────
     wait_for_window() {
@@ -417,6 +436,8 @@ else
     date -u +'%Y-%m-%dT%H:%M:%SZ' > "${SENTINEL}"
     rm -f "${DCS_INSTALLER_TMP}"
     echo "   ✓ DCS base server installed and downloaded!"
+    # Re-enable errexit now that the best-effort GUI/download block is done.
+    set -e
 fi
 
 # ════════════════════════════════════════════════════════════
