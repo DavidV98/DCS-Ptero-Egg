@@ -144,6 +144,8 @@ http://<your-wings-host-ip>:6080/vnc.html
 
 **Egg import returns HTTP 500.** Run `python3 validate-egg.py egg-dcs-world.json`. The usual cause is `"features": null` (must be `[]`) or a `config` sub-field that isn't a JSON-encoded string.
 
+**Reinstall does nothing / "server marked as offline" with no install log.** The install container image can't be pulled. The old `ghcr.io/pterodactyl/installers:ubuntu` namespace no longer publishes images (`manifest unknown`); this egg uses the current `ghcr.io/pelican-eggs/installers:ubuntu`. The validator flags the dead namespace if it creeps back in.
+
 **Server stuck on "Starting".** It reached the DCS login screen but couldn't authenticate. Confirm `DCS_USERNAME`/`DCS_PASSWORD`, or set `DCS_DEBUG_VNC=1` and log in once manually.
 
 **Install times out / updater loops.** The updater occasionally exits mid-download and is re-run automatically (up to 40 attempts). Each pass resumes. A correct UTF-8 locale (`C.UTF-8`, baked in) is required — older setups failed on liveries with accented filenames.

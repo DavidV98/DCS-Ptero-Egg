@@ -24,7 +24,7 @@
     "scripts": {
         "installation": {
             "script": "#!/bin/bash\ncurl -fsSL https://raw.githubusercontent.com/DavidV98/DCS-Ptero-Egg/main/docker/install.sh | bash",
-            "container": "ghcr.io/pterodactyl/installers:ubuntu",
+            "container": "ghcr.io/pelican-eggs/installers:ubuntu",
             "entrypoint": "bash"
         }
     },
