@@ -17,7 +17,7 @@
     "startup": "/entrypoint.sh",
     "config": {
         "files": "{}",
-        "startup": "{\"done\": \"Server: listening\"}",
+        "startup": "{\"done\": \"ASYNCNET (Main): Listening on port\"}",
         "logs": "{}",
         "stop": "^C"
     },
@@ -100,6 +100,16 @@
             "field_type": "text"
         },
         {
+            "name": "Mission File",
+            "description": "Filename of the .miz mission in the Missions folder to load on start. The server will not start hosting without a valid mission. A bundled mission is seeded automatically on first install. Upload your own .miz via the file manager and set this to its filename. Mission should match your installed terrain.",
+            "env_variable": "DCS_MISSION",
+            "default_value": "default.miz",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:128",
+            "field_type": "text"
+        },
+        {
             "name": "Update Branch",
             "description": "DCS release branch to track. Leave blank for the default stable release. Options: dcs_server.release, dcs_server.openbeta.",
             "env_variable": "DCS_BRANCH",
@@ -127,6 +137,36 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string|max:512",
+            "field_type": "text"
+        },
+        {
+            "name": "Eagle Dynamics Username",
+            "description": "Your Eagle Dynamics account username/email. Required on first launch so the dedicated server can authenticate. The login token persists afterward, so this is only used once. Leave blank to log in manually via the debug VNC instead.",
+            "env_variable": "DCS_USERNAME",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:128",
+            "field_type": "text"
+        },
+        {
+            "name": "Eagle Dynamics Password",
+            "description": "Your Eagle Dynamics account password. Used only to fill the first-launch login window; the token persists afterward. Stored as a server variable \u2014 treat with care.",
+            "env_variable": "DCS_PASSWORD",
+            "default_value": "",
+            "user_viewable": false,
+            "user_editable": true,
+            "rules": "nullable|string|max:128",
+            "field_type": "text"
+        },
+        {
+            "name": "Enable Debug VNC",
+            "description": "Set to 1 to start a browser-based noVNC console showing the DCS GUI for troubleshooting (first-time login, watching mission load, etc). Reachable at http://<wings-host-ip>:6080/vnc.html. SECURITY: no password \u2014 use only on a trusted local network, never expose port 6080 publicly.",
+            "env_variable": "DCS_DEBUG_VNC",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
             "field_type": "text"
         }
     ]

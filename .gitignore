@@ -1,16 +1,40 @@
-# Git ignore file for a Pterodactyl Egg project
+# ── DCS / Wine runtime data (never commit — tens of GB, user-specific) ──────
+.wine/
+serverdata/
+*.miz
+!missions/example/*.miz
+Saved Games/
+_downloads/
 
-# Ignore build artifacts and temporary files
-build/
-dist/
-*.log
+# ── DCS installer (downloaded at build/install time, ~17MB+) ────────────────
+DCS_World_Server_modular.exe
+dcs_installer.exe
+*.exe
 
-# Ignore local configuration and sensitive files
+# ── Secrets / credentials (NEVER commit) ────────────────────────────────────
+# Real ED account credentials must never be checked in.
+autologin.lua
+# DCS encrypted ED credential store — NEVER commit
+network.vault
+*.vault
+*.secret
 .env
-.DS_Store
+credentials.txt
 
-# Pterodactyl-specific files to ignore
-# The egg.json file is meant to be committed, but this
-# prevents accidental commits of other local panel files.
-pterodactyl/
-!pterodactyl/egg-dcs.json
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+Logs/
+dcs.log
+
+# ── OS / editor cruft ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/
+*.bak
+
+# ── Docker local build artifacts ───────────────────────────────────────────
+*.tar
