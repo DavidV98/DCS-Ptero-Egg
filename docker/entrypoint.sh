@@ -419,9 +419,14 @@ configure_server() {
         echo "   ✓ Mission present: ${DCS_MISSION}"
     fi
 
+    # ALWAYS regenerate serverSettings.lua from the panel variables. The panel
+    # variables are the source of truth, so this makes variable changes (name,
+    # mission, max players) take effect on restart, and prevents a stale file
+    # from an earlier run (e.g. with a broken mission path, or an empty
+    # missionList after DCS stripped an invalid entry) from blocking startup
+    # with "Mission list is empty, server not started."
     local SETTINGS_FILE="${DCS_SAVE}/Config/serverSettings.lua"
-    if [ ! -f "${SETTINGS_FILE}" ]; then
-        cat > "${SETTINGS_FILE}" << EOF
+    cat > "${SETTINGS_FILE}" << EOF
 cfg =
 {
     ["name"]          = "${DCS_SERVER_NAME}",
@@ -453,10 +458,7 @@ cfg =
     },
 }
 EOF
-        echo "   ✓ serverSettings.lua created"
-    else
-        echo "   ℹ Existing serverSettings.lua preserved"
-    fi
+    echo "   ✓ serverSettings.lua written (mission: ${DCS_MISSION})"
 
     cat > "${DCS_SAVE}/Config/autoexec.cfg" << EOF
 if not net then net = {} end
