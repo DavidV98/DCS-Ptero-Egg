@@ -48,7 +48,10 @@ init_config() {
     DCS_VNC_PORT="${DCS_VNC_PORT:-6080}"
 
     DCS_SAVE="${WINEPREFIX}/drive_c/users/container/Saved Games/${DCS_WRITE_DIR}"
-    DCS_SAVE_WIN="C:\\users\\container\\Saved Games\\${DCS_WRITE_DIR}"
+    # FORWARD slashes — DCS/Lua accepts '/' on Windows and this avoids the
+    # backslash-escaping bug where heredoc/shell collapse '\' and produce a
+    # broken path like "C:userscontainerSaved Games..." that DCS can't open.
+    DCS_SAVE_WIN="C:/users/container/Saved Games/${DCS_WRITE_DIR}"
     NETWORK_VAULT="${DCS_SAVE}/Config/network.vault"
 
     # ── Wine environment ───────────────────────────────────
@@ -432,7 +435,7 @@ cfg =
     ["require_pure_textures"] = true,
     ["missionList"]   =
     {
-        [1] = "${DCS_SAVE_WIN}\\Missions\\${DCS_MISSION}",
+        [1] = "${DCS_SAVE_WIN}/Missions/${DCS_MISSION}",
     },
     ["current_mission"] = 1,
     ["advanced"] =
@@ -485,7 +488,14 @@ check_login_state() {
     fi
 }
 
-# Background helper: fill the DCS Login window on first boot (best-effort).
+# Background helper: best-effort fill of the DCS Login window on first boot.
+#
+# HONEST CAVEAT: the field/Tab order here is not fully reliable across DCS
+# versions — in testing the checkboxes were not always ticked and focus could
+# land oddly. The RECOMMENDED first login is via the VNC console (DCS_DEBUG_VNC=1):
+# type username + password by hand and TICK "Save password" AND "Auto login",
+# then Log In. That writes network.vault and no further login is needed.
+# This helper is a convenience attempt only; always verify in the VNC.
 auto_login() {
     [ "${AUTO_LOGIN_ENABLED}" = "1" ] || return 0
     (
@@ -497,13 +507,17 @@ auto_login() {
         done
         if [ -n "${WID}" ]; then
             xdotool windowactivate --sync "${WID}" 2>/dev/null; sleep 1
-            xdotool type --delay 60 "${DCS_USERNAME}"; sleep 0.5
-            xdotool key Tab; sleep 0.5
-            xdotool type --delay 60 "${DCS_PASSWORD}"; sleep 0.5
-            xdotool key Tab; sleep 0.3; xdotool key space   # save password
-            xdotool key Tab; sleep 0.3; xdotool key space   # auto login
-            sleep 0.5; xdotool key Return
-            echo "   [login] Credentials submitted; network.vault should persist."
+            # Field order in the DCS Login window:
+            #   Username → Password → [Save password] → [Auto login] → Log In
+            xdotool type --clearmodifiers --delay 80 "${DCS_USERNAME}"; sleep 0.6
+            xdotool key Tab; sleep 0.6
+            xdotool type --clearmodifiers --delay 80 "${DCS_PASSWORD}"; sleep 0.6
+            xdotool key Tab; sleep 0.4; xdotool key space   # tick "Save password"
+            xdotool key Tab; sleep 0.4; xdotool key space   # tick "Auto login"
+            sleep 0.6; xdotool key Return                    # Log In
+            echo "   [login] Auto-fill attempted. VERIFY IN VNC that login"
+            echo "   [login] succeeded and both checkboxes are ticked. If not,"
+            echo "   [login] finish by hand in the VNC — network.vault then persists."
         fi
     ) &
 }
