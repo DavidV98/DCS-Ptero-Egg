@@ -66,14 +66,14 @@ On first start the server downloads and installs DCS (**30–60+ minutes**, stre
 | `DCS_SERVER_PORT` | `10308` | Game port (UDP); DCS also uses port + 1 |
 | `DCS_WEBGUI_PORT` | `8088` | WebGUI control port (TCP) |
 | `DCS_SERVER_PASSWORD` | *(blank)* | Join password — blank means public |
-| `DCS_MAX_PLAYERS` | `16` | Maximum concurrent players |
+| `DCS_MAX_PLAYERS` | `8` | Maximum concurrent players |
 | `DCS_MISSION` | `default.miz` | Mission filename in the `Missions/` folder to load |
-| `DCS_MODULES` | *(blank)* | Space-separated terrain modules to add |
+| `DCS_MODULES` | *CAUCASUS_terrain* | Space-separated terrain modules to add |
 | `DCS_BRANCH` | *(blank)* | Update branch — blank means stable |
 | `AUTO_UPDATE` | `0` | `1` runs the updater before each start |
 | `DCS_USERNAME` | *(blank)* | Eagle Dynamics account (first-launch login) |
 | `DCS_PASSWORD` | *(blank)* | Eagle Dynamics password (first-launch login) |
-| `DCS_DEBUG_VNC` | `0` | `1` starts the debug VNC console on port 6080 |
+| `DCS_DEBUG_VNC` | `1` | `1` starts the debug VNC console on port 6080 |
 | `DCS_WRITE_DIR` | `DCS.server` | Saved Games profile name (advanced) |
 | `DCS_INSTALLER_URL` | *(ED URL)* | Direct installer URL — update if ED changes it |
 
