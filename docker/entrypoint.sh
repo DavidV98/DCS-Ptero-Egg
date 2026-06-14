@@ -142,15 +142,44 @@ init_wine_prefix() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo " Wine prefix"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    if [ ! -f "${WINEPREFIX}/system.reg" ]; then
-        echo "   First run — initialising Wine prefix (win64)..."
-        wineboot --init
-        sleep 5
-        winetricks -q vcrun2019 || echo "   ⚠ winetricks vcrun2019 non-zero (continuing; vc_redist installs runtime later)"
-        echo "   ✓ Wine prefix initialised"
-    else
-        echo "   ✓ Existing Wine prefix found"
+
+    # Policy: once DCS is installed, the prefix holds the game and MUST be
+    # preserved. But if DCS is NOT yet installed, we always build the prefix
+    # FRESH — surface-level validity markers (registry hives, arch, Program
+    # Files dir) proved insufficient: a prefix can have all of them yet still
+    # fail the installer with "Failed to get path of 64-bit Program Files
+    # directory." A from-scratch prefix is known-good and only costs ~30s, so
+    # we don't gamble on a possibly-broken leftover prefix before installing.
+    if [ -f "${DCS_SERVER}" ] && prefix_is_valid; then
+        echo "   ✓ DCS installed and prefix valid — preserving prefix."
+        return 0
     fi
+
+    if [ -d "${WINEPREFIX}" ]; then
+        echo "   Rebuilding Wine prefix from scratch (no DCS install yet, or"
+        echo "   prefix incomplete) — removing ${WINEPREFIX} for a clean build."
+        rm -rf "${WINEPREFIX}"
+    fi
+
+    echo "   Initialising Wine prefix (win64)..."
+    wineboot --init
+    sleep 5
+    if ! prefix_is_valid; then
+        echo "   ERROR: Wine prefix still invalid after wineboot. Cannot continue."
+        exit 1
+    fi
+    winetricks -q vcrun2019 || echo "   ⚠ winetricks vcrun2019 non-zero (continuing; vc_redist installs runtime later)"
+    echo "   ✓ Wine prefix initialised (clean)"
+}
+
+# Surface validity check — necessary but, as learned, not sufficient on its
+# own. Used together with the "no DCS = always rebuild" policy above.
+prefix_is_valid() {
+    [ -f "${WINEPREFIX}/system.reg" ] || return 1
+    [ -f "${WINEPREFIX}/user.reg" ]   || return 1
+    grep -q "#arch=win64" "${WINEPREFIX}/system.reg" 2>/dev/null || return 1
+    [ -d "${WINEPREFIX}/drive_c/Program Files" ] || return 1
+    return 0
 }
 
 # ════════════════════════════════════════════════════════════
