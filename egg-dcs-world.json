@@ -93,7 +93,7 @@
             "name": "Terrain Modules",
             "description": "Space-separated list of terrain module names to install. Caucasus is included by default. Example: MARIANAISLANDS_terrain SYRIA_terrain NEVADA_terrain. Paid maps require an Eagle Dynamics account.",
             "env_variable": "DCS_MODULES",
-            "default_value": "",
+            "default_value": "CAUCASUS_terrain",
             "user_viewable": true,
             "user_editable": true,
             "rules": "nullable|string|max:512",
