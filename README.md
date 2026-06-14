@@ -1,33 +1,32 @@
-# DCS World Dedicated Server — Pterodactyl Egg
+# 🛩️ DCS World Dedicated Server — Pterodactyl Egg
 
-Run a [DCS World](https://www.digitalcombatsimulator.com/) Dedicated Server on Linux under [Pterodactyl](https://pterodactyl.io/), using Wine. The egg handles the full lifecycle automatically: download from Eagle Dynamics, silent install, authentication, mission setup, and launch.
+Run a [DCS World](https://www.digitalcombatsimulator.com/) **Dedicated Server** on Linux under [Pterodactyl](https://pterodactyl.io/), powered by Wine. The egg handles the entire lifecycle automatically — download from Eagle Dynamics, install, authentication, mission setup, and launch — with no manual steps required. 🚀
 
-> **Status:** Verified working end to end — install, ~31 GB download, ED login, mission load, and `Listening on port 10308`. See [Acknowledgements](#acknowledgements) for the bring-up notes.
-
----
-
-## Features
-
-- **Fully automated install** — downloads and installs the DCS Dedicated Server with no manual steps, driving the GUI installer headlessly via `xdotool`.
-- **Compact base install** — installs the engine + Caucasus, then adds terrain modules on demand (keeps the base download small instead of 450 GB+).
-- **Terrain-linked mission variable** — pick which `.miz` the server loads from a panel variable; a default mission is seeded so the server always starts.
-- **Automatic Eagle Dynamics login** — credentials supplied as panel variables are entered on first launch; the token persists afterward.
-- **Auto-update on start** (optional) — keep DCS current via the bundled updater.
-- **Live install progress** — the long download streams a heartbeat + updater log to the panel console so it never looks hung.
-- **Built-in debug VNC** (optional) — a browser-based console for troubleshooting, bound for local use only.
+> ✅ **Verified working end to end:** clean install, ~30 GB download (base + Caucasus), automated installer, ED login, mission load, and `Listening on port`.
 
 ---
 
-## Repository layout
+## ✨ Features
+
+- 🤖 **Fully automated install** — downloads and installs the DCS Dedicated Server on first boot, driving the GUI installer headlessly via keyboard automation. No clicking required.
+- 🌍 **Caucasus included** — the base install ships with the Caucasus terrain, so the default mission runs out of the box. Add more terrains on demand.
+- 🗺️ **Mission as a variable** — choose which `.miz` the server loads from a panel variable; a default mission is seeded so the server always starts.
+- 🔐 **Eagle Dynamics login** — log in once (via the debug console or credentials); the token persists, so you never log in again.
+- 🔄 **Optional auto-update** — keep DCS current on every start with a single toggle.
+- 📊 **Live install progress** — the long download streams a heartbeat to the panel console so it never looks frozen.
+- 🖥️ **Built-in debug console** — an optional browser-based VNC for watching or assisting the first-boot install.
+
+---
+
+## 📁 Repository layout
 
 ```
 .
 ├── docker/
 │   ├── Dockerfile        # Ubuntu 22.04 + WineHQ Staging runtime image
-│   ├── entrypoint.sh     # Runs every start: prefix, login, mission, launch
-│   └── install.sh        # Runs once: Wine setup, DCS download/install
+│   ├── entrypoint.sh     # First-boot install + every-start launch logic
+│   └── install.sh        # Minimal: prepares the data directory
 ├── egg-dcs-world.json    # The Pterodactyl egg (import this)
-├── validate-egg.py       # Pre-import sanity checker (avoids 500 errors)
 ├── .github/workflows/
 │   └── docker-publish.yml # Builds & pushes the image to GHCR on push
 ├── .gitignore
@@ -36,137 +35,136 @@ Run a [DCS World](https://www.digitalcombatsimulator.com/) Dedicated Server on L
 
 ---
 
-## Quick start
+## 🚀 Quick start
 
-### 1. Build & publish the image
+### 1️⃣ Build & publish the image
 
-Pushing to `main` triggers the GitHub Actions workflow, which builds `docker/Dockerfile` and publishes to `ghcr.io/davidv98/dcs-ptero-egg:latest`. After the first build, set the GHCR package visibility to **Public** so Wings can pull it without credentials.
+Push to `main` and the GitHub Actions workflow builds `docker/Dockerfile` and publishes it to `ghcr.io/davidv98/dcs-ptero-egg:latest`. After the first build, set the GHCR package to **Public** so Wings can pull it.
 
-### 2. Validate and import the egg
+### 2️⃣ Import the egg
 
-```bash
-python3 validate-egg.py egg-dcs-world.json
-```
+Import `egg-dcs-world.json` in the panel under **Admin → Nests → Import Egg**.
 
-If it reports `PASS`, import `egg-dcs-world.json` in the panel under **Admin → Nests → Import Egg**.
+### 3️⃣ Create a server
 
-### 3. Create a server
+- Allocate ports `10308/udp`, `10309/udp`, and `8088/tcp` (plus `6080/tcp` if you want the debug console).
+- Set **8 GB+** RAM (more with extra terrains).
+- Fill in `DCS_USERNAME` and `DCS_PASSWORD`, **or** plan to log in once via the debug console.
+- Click **Install** — this is quick; it only prepares the data directory.
 
-- Use the DCS egg, allocate ports `10308/udp`, `10309/udp`, and `8088/tcp`.
-- Set at least **8 GB** RAM (more with extra terrains).
-- Fill in `DCS_USERNAME` and `DCS_PASSWORD` (your Eagle Dynamics account).
-- Click **Install**. The first install downloads several GB and takes 30–60+ minutes; progress streams to the console.
+### 4️⃣ Start 🎬
 
-### 4. Start
-
-On first start the server logs in with your ED credentials, loads the seeded mission, and reports `Listening on port 10308`. The panel flips to **Online**.
+On first start the server downloads and installs DCS (**30–60+ minutes**, streamed live to the console), logs in, loads the mission, and reports `Listening on port`. The panel flips to **Online**. Subsequent starts launch in seconds.
 
 ---
 
-## Configuration variables
+## ⚙️ Configuration variables
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DCS_SERVER_NAME` | DCS Pterodactyl Server | Name in the server browser |
-| `DCS_SERVER_PORT` | 10308 | Game port (UDP); DCS also uses port+1 |
-| `DCS_WEBGUI_PORT` | 8088 | WebGUI control port (TCP) |
-| `DCS_SERVER_PASSWORD` | *(blank)* | Join password (blank = public) |
-| `DCS_MAX_PLAYERS` | 16 | Max concurrent players |
-| `DCS_MISSION` | default.miz | Mission filename in the `Missions/` folder to load |
-| `DCS_MODULES` | *(blank)* | Space-separated terrain modules to install |
-| `DCS_BRANCH` | *(blank)* | Update branch (blank = stable) |
-| `AUTO_UPDATE` | 0 | `1` = run the updater before each start |
+| `DCS_SERVER_NAME` | DCS Pterodactyl Server | Name shown in the server browser |
+| `DCS_SERVER_PORT` | `10308` | Game port (UDP); DCS also uses port + 1 |
+| `DCS_WEBGUI_PORT` | `8088` | WebGUI control port (TCP) |
+| `DCS_SERVER_PASSWORD` | *(blank)* | Join password — blank means public |
+| `DCS_MAX_PLAYERS` | `16` | Maximum concurrent players |
+| `DCS_MISSION` | `default.miz` | Mission filename in the `Missions/` folder to load |
+| `DCS_MODULES` | *(blank)* | Space-separated terrain modules to add |
+| `DCS_BRANCH` | *(blank)* | Update branch — blank means stable |
+| `AUTO_UPDATE` | `0` | `1` runs the updater before each start |
 | `DCS_USERNAME` | *(blank)* | Eagle Dynamics account (first-launch login) |
 | `DCS_PASSWORD` | *(blank)* | Eagle Dynamics password (first-launch login) |
-| `DCS_DEBUG_VNC` | 0 | `1` = start the debug VNC console on port 6080 |
-| `DCS_WRITE_DIR` | DCS.server | Saved Games profile name (advanced) |
-| `DCS_INSTALLER_URL` | *(ED URL)* | Direct installer URL (update if ED changes it) |
+| `DCS_DEBUG_VNC` | `0` | `1` starts the debug VNC console on port 6080 |
+| `DCS_WRITE_DIR` | `DCS.server` | Saved Games profile name (advanced) |
+| `DCS_INSTALLER_URL` | *(ED URL)* | Direct installer URL — update if ED changes it |
 
 ---
 
-## Eagle Dynamics login
+## 🔑 Eagle Dynamics login
 
-DCS requires an ED account login on first launch before it will host. Verified behaviour: DCS stores this login as an **encrypted `network.vault`** file in `<Saved Games>/DCS.server/Config/`. It's created on first successful login and **persists across restarts** because the prefix lives on the server's data volume. So you only log in once. The egg detects this file to decide whether a login is needed.
+DCS requires an ED account login on first launch before it will host. The login is stored as an encrypted `network.vault` file in the prefix and **persists across restarts**, so you only do it once. The egg detects this file to decide whether a login is needed.
 
-**Recommended first-login flow:**
+**Recommended first-login flow (most reliable):**
 
-1. Set `DCS_DEBUG_VNC=1` and start the server.
-2. Open `http://<wings-host-ip>:6080/vnc.html` and log into the DCS Login window when it appears (tick Save Password + Auto Login).
-3. Once the server reaches `Listening on port`, the token is cached. Set `DCS_DEBUG_VNC=0` and restart — no further login needed.
+1. Set `DCS_DEBUG_VNC=1` and start the server. 🖥️
+2. Open `http://<server-ip>:6080/vnc.html`. When the **DCS Login** window appears, type your username and password **by hand**, and importantly **tick both "Save password" and "Auto login"** ✅ before clicking **Log In**.
+3. Once the server reaches `Listening on port`, the encrypted `network.vault` token is written. Set `DCS_DEBUG_VNC=0` and restart — no further login needed.
 
-Setting `DCS_USERNAME`/`DCS_PASSWORD` enables a best-effort automatic fill of that login window via `xdotool`, but since the token format is opaque and unverified, the VNC path above is the reliable fallback if the auto-fill misses.
+> ℹ️ Setting `DCS_USERNAME` / `DCS_PASSWORD` makes the egg *attempt* to auto-fill the login window, but the auto-fill is best-effort and may not tick the checkboxes reliably. **Always verify the login via VNC on the first run** — the manual tick-the-boxes step above is the dependable path.
 
-## Missions
+---
 
-The server will not start hosting without a mission, so a bundled Caucasus mission is seeded as `default.miz` on first install. To use your own:
+## 🗺️ Missions
 
-1. Upload a `.miz` to the server's `Missions/` folder via the panel file manager.
+The server won't host without a mission, so a Caucasus mission is seeded as `default.miz` on first install. To use your own:
+
+1. Upload a `.miz` to the server's `Missions/` folder via the file manager. 📤
 2. Set `DCS_MISSION` to that filename.
 3. Restart.
 
-Pick a mission that matches an installed terrain (Caucasus ships with the base install; add others via `DCS_MODULES`).
+Pick a mission that matches an installed terrain — Caucasus ships with the base install; add others via `DCS_MODULES`.
 
 ---
 
-## Terrain modules
+## 🌍 Terrain modules
 
-Set `DCS_MODULES` to a space-separated list, e.g.:
+Set `DCS_MODULES` to a space-separated list to add more maps, for example:
 
 ```
-MARIANAISLANDS_terrain SYRIA_terrain NEVADA_terrain
+SYRIA_terrain NEVADA_terrain MARIANAISLANDS_terrain
 ```
 
-Free terrains install without an account. Paid terrains require the ED account set in `DCS_USERNAME`/`DCS_PASSWORD` to own them.
+Free terrains install without an account; paid terrains require the ED account in `DCS_USERNAME` / `DCS_PASSWORD` to own them.
 
 ---
 
-## WebGUI and remote control
+## 🌐 WebGUI & remote control
 
-DCS exposes a control interface on port 8088. It is designed to be reached either through your Eagle Dynamics account at digitalcombatsimulator.com (their servers connect to yours) or locally.
+DCS exposes a control interface on port `8088`, reachable through your Eagle Dynamics account at digitalcombatsimulator.com or locally.
 
-**Security:** the 8088 interface has no authentication of its own. **Do not expose it to the public internet.** Allocate it in the panel for local/tunnelled use, or restrict your firewall to Eagle Dynamics' control IP.
+> ⚠️ **Security:** the `8088` interface has no authentication of its own. **Never expose it to the public internet.** Eagle Dynamics' control server connects from a single IP — **restrict inbound `8088/tcp` to `54.36.51.100`** (ED's web-control server). With that whitelist in place you administer the server by logging into your account at digitalcombatsimulator.com → **Profile → your server**. The control device must be logged into the same ED account as the server.
 
 ---
 
-## Debug VNC console
+## 🖥️ Debug VNC console
 
-Set `DCS_DEBUG_VNC=1` to start a browser-based view of the DCS GUI — useful for a one-time manual login or watching a mission load. It binds to port 6080 on the Wings host:
+Set `DCS_DEBUG_VNC=1` to start a browser-based view of the DCS GUI — perfect for a one-time login or watching the first-boot install. Allocate port `6080` on the server and open:
 
 ```
-http://<your-wings-host-ip>:6080/vnc.html
+http://<server-ip>:6080/vnc.html
 ```
 
-**Security:** there is no VNC password. Use only on a trusted local network and never forward port 6080 publicly. Turn it off (`0`) in normal operation.
+> ⚠️ **Security:** there is no VNC password. Use it only on a trusted local network and never expose port `6080` publicly. Turn it off (`0`) in normal operation.
 
 ---
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
-**Egg import returns HTTP 500.** Run `python3 validate-egg.py egg-dcs-world.json`. The usual cause is `"features": null` (must be `[]`) or a `config` sub-field that isn't a JSON-encoded string.
+**🟥 Reinstall does nothing / "server marked as offline" with no install log.**
+The install container image can't be pulled. This egg uses the current `ghcr.io/pelican-eggs/installers:ubuntu` (the old `pterodactyl/installers` namespace no longer publishes images).
 
-**Reinstall does nothing / "server marked as offline" with no install log.** The install container image can't be pulled. The old `ghcr.io/pterodactyl/installers:ubuntu` namespace no longer publishes images (`manifest unknown`); this egg uses the current `ghcr.io/pelican-eggs/installers:ubuntu`. The validator flags the dead namespace if it creeps back in.
+**🟧 Server stuck on "Starting" for a long time on first boot.**
+That's expected — the first start downloads ~30 GB and installs DCS (30–60+ minutes). Progress streams to the console. It flips to **Online** once the server reports `Listening on port`.
 
-**Server stuck on "Starting".** It reached the DCS login screen but couldn't authenticate. Confirm `DCS_USERNAME`/`DCS_PASSWORD`, or set `DCS_DEBUG_VNC=1` and log in once manually.
+**🟨 Installer fails with "Failed to get path of 64-bit Program Files directory."**
+A broken Wine prefix. The entrypoint rebuilds the prefix from scratch whenever DCS isn't installed yet, so a restart resolves this automatically.
 
-**Install times out / updater loops.** The updater occasionally exits mid-download and is re-run automatically (up to 40 attempts). Each pass resumes. A correct UTF-8 locale (`C.UTF-8`, baked in) is required — older setups failed on liveries with accented filenames.
+**🟦 Server stops at the login screen.**
+No saved login. Set `DCS_DEBUG_VNC=1` and log in once via the browser console, or provide `DCS_USERNAME` / `DCS_PASSWORD`. After one login the token persists.
 
-**Crash on `__std_tzdb_get_sys_info`.** Fixed: the install step adds the DCS-bundled `vc_redist.x64.exe`, and the launch forces the native `msvcp140_atomic_wait` DLL.
-
----
-
-## Requirements
-
-- A Pterodactyl panel + Wings node (Linux)
-- ~60 GB free disk for the base install (much more with terrains)
-- 8 GB+ RAM allocated per server
-- An Eagle Dynamics account
+**🟪 Installer download fails (404).**
+The `DCS_INSTALLER_URL` contains a version hash that changes when ED updates the build. Grab the current URL from the DCS download page and update the variable.
 
 ---
 
-## Acknowledgements
+## 📋 Requirements
 
-Built through iterative testing on a live Wine/Pterodactyl stack. Thanks to the broader DCS-on-Linux community whose notes on Wine quirks (UTF-8 paths, the VC++ runtime crash) informed the fixes baked into these scripts.
+- 🖧 A Pterodactyl panel + Wings node (Linux)
+- 💾 ~60 GB free disk for the base install (much more with extra terrains)
+- 🧠 8 GB+ RAM allocated per server
+- 👤 An Eagle Dynamics account
 
-## License
+---
+
+## 📄 License
 
 Provided as-is. DCS World and all related assets are property of Eagle Dynamics. You are responsible for complying with the DCS EULA.
